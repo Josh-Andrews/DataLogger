@@ -1,0 +1,177 @@
+<!-- intensity.html -->
+<!-- lightly modified by Josh Andrews -->
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<META http-equiv="refresh" content="300">
+<script type="text/javascript" src="moment-with-locales.js"></script>
+<script type="text/javascript" src="Chart.min.js"></script>
+<script type="text/javascript" src="jquery.min.js"></script>
+<style>
+#myChart {
+	background-color: #000000;
+}
+</style>
+</head>
+<body bgcolor="black">
+<canvas id="myChart" width="1100" height="900"></canvas>
+<script>
+function plot(results) {
+var sum1=0;
+var sum2=0;
+var sum3=0;
+var len=30;
+if (results["data1"].length<30) {
+    len=results["data1"].length;
+}
+for (var j=0;j<len;j++) {
+    sum1=sum1+results["data1"][j].y;
+    sum2=sum2+results["data2"][j].y;
+    sum3=sum3+results["data3"][j].y;
+}
+for (var i=0; i<results["data1"].length-30; i++) {
+    var current1=results["data1"][i].y;
+    var current2=results["data2"][i].y;
+    var current3=results["data3"][i].y;
+    results["data1"][i].y=sum1/30;
+    results["data2"][i].y=sum2/30;
+    results["data3"][i].y=sum3/30;
+    sum1=sum1-current1+results["data1"][i+len].y;
+    sum2=sum2-current2+results["data2"][i+len].y;
+    sum3=sum3-current3+results["data3"][i+len].y;
+}
+for (var i=results["data1"].length-30; i<results["data1"].length; i++) {
+    var current1=results["data1"][i].y;
+    var current2=results["data2"][i].y;
+    var current3=results["data3"][i].y;
+    var len=results["data1"].length-i;
+    results["data1"][i].y=sum1/len;
+    results["data2"][i].y=sum2/len;
+    results["data3"][i].y=sum3/len;
+    sum1=sum1-current1;
+    sum2=sum2-current2;
+    sum3=sum3-current3;
+}
+var ctx = document.getElementById("myChart").getContext('2d');
+Chart.defaults.global.defaultFontSize = 16;
+Chart.defaults.global.defaultFontColor = "#FFFFFF";
+var myChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+        datasets: [{
+			label: "IR",
+			lineTension: 0,
+			pointRadius: 0,
+			borderColor: "green",   //changed color
+			borderWidth: 2,
+			cubicInterpolationMode: "monotone",
+            data: results["data1"],
+			fill: false
+        },{
+            //added dataset (copied above and changed for data2)
+            label: "Full Spectrum",
+			lineTension: 0,
+			pointRadius: 0,
+			borderColor: "blue",    //changed color
+			borderWidth: 2,
+			cubicInterpolationMode: "monotone",
+            data: results["data2"],
+			fill: false
+        },{
+            //added dataset (copied above and changed for data3)
+            label: "Visible",
+			lineTension: 0,
+			pointRadius: 0,
+			borderColor: "yellow",    //changed color
+			borderWidth: 2,
+			cubicInterpolationMode: "monotone",
+            data: results["data3"],
+			fill: false
+        }],
+    },
+    options: {
+		responsive: false,
+		responsiveAnimationDuration:0,
+		animation: {
+			duration: 0,
+		},
+		hover: {
+			animationDuration: 400,
+		},
+        scales: {
+			xAxes: [{
+				type: "time",
+				display: true,
+				scaleLabel: {
+					display: true,
+					labelString: "Time",
+				},
+				gridLines: {
+					color: "rgba(255, 0, 0, 255)",
+					borderDash: [4, 8],
+				},
+			}],
+			yAxes: [{
+				display: true,
+				scaleLabel: {
+					display: true,
+					labelString: "Intensity, raw",
+				},
+				gridLines: {
+					zeroLineColor: "rgba(255, 0, 0, 255)",
+					zeroLineBorderDash: [4, 8],
+					color: "rgba(255, 0, 0, 255)",
+					borderDash: [4, 8],
+				},
+			}]
+		},
+        legend: {
+			display: false,
+			position: "bottom",
+			labels: {
+				boxWidth: 2,
+			},
+		},
+		title: {
+			display: true,
+            fontSize: 30,   //changed font size
+			text: "Raw Intensity",
+		}
+    }
+});
+
+ctx.font = "14px Arial";
+ctx.fillStyle = "white";
+var d = new Date();
+ctx.fillText(d.toLocaleString(),490,75); 
+
+
+ctx.fillText("IR: " + results["data1"][results["data1"].length-1].y.toFixed(1),110,75);
+ctx.beginPath();
+ctx.strokeStyle="green";    //changed the color
+ctx.moveTo(95,70);
+ctx.lineTo(105,70);
+ctx.stroke();
+
+
+//duplicated above code segment to label other data.  I also repositioned these to look better.
+ctx.fillText("Full: " + results["data2"][results["data2"].length-1].y.toFixed(1),110,90);
+ctx.beginPath();
+ctx.strokeStyle="blue";     //changed the color
+ctx.moveTo(95,85);
+ctx.lineTo(105,85);
+ctx.stroke();
+
+//duplicated above code segment to label other data.  I also repositioned these to look better.
+ctx.fillText("Visible: " + results["data3"][results["data3"].length-1].y.toFixed(1),110,105);
+ctx.beginPath();
+ctx.strokeStyle="yellow";     //changed the color
+ctx.moveTo(95,100);
+ctx.lineTo(105,100);
+ctx.stroke();
+
+}
+var jsondata= $.ajax({url:'intens.php', dataType: 'json', }).done(function (results) { plot(results); } );
+</script>
+</body>
+</html>

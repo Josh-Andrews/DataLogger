@@ -1,0 +1,152 @@
+<!-- temperature.html -->
+<!-- lightly modified by Josh Andrews -->
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<META http-equiv="refresh" content="300">
+<script type="text/javascript" src="moment-with-locales.js"></script>
+<script type="text/javascript" src="Chart.min.js"></script>
+<script type="text/javascript" src="jquery.min.js"></script>
+<style>
+#myChart {
+	background-color: #000000;
+}
+</style>
+</head>
+<body bgcolor="black">
+<canvas id="myChart" width="1100" height="900"></canvas>
+<script>
+function plot(results) {
+var sum1=0;
+var sum2=0;
+var len=30;
+if (results["data1"].length<30) {
+    len=results["data1"].length;
+}
+for (var j=0;j<len;j++) {
+    sum1=sum1+results["data1"][j].y;
+    sum2=sum2+results["data2"][j].y;
+
+}
+for (var i=0; i<results["data1"].length-30; i++) {
+    var current1=results["data1"][i].y;
+    var current2=results["data2"][i].y;
+    results["data1"][i].y=sum1/30;
+    results["data2"][i].y=sum2/30;
+    sum1=sum1-current1+results["data1"][i+len].y;
+    sum2=sum2-current2+results["data2"][i+len].y;
+}
+for (var i=results["data1"].length-30; i<results["data1"].length; i++) {
+    var current1=results["data1"][i].y;
+    var current2=results["data2"][i].y;
+    var len=results["data1"].length-i;
+    results["data1"][i].y=sum1/len;
+    results["data2"][i].y=sum2/len;
+    sum1=sum1-current1;
+    sum2=sum2-current2;
+}
+var ctx = document.getElementById("myChart").getContext('2d');
+Chart.defaults.global.defaultFontSize = 16;
+Chart.defaults.global.defaultFontColor = "#FFFFFF";
+var myChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+        datasets: [{
+			label: "HiRes Temp",
+			lineTension: 0,
+			pointRadius: 0,
+			borderColor: "green",   //changed color
+			borderWidth: 2,
+			cubicInterpolationMode: "monotone",
+            data: results["data1"],
+			fill: false
+        },{
+            //added dataset (copied above and changed for data2)
+            label: "Normal Temp",
+			lineTension: 0,
+			pointRadius: 0,
+			borderColor: "blue",    //changed color
+			borderWidth: 2,
+			cubicInterpolationMode: "monotone",
+            data: results["data2"],
+			fill: false
+        }],
+    },
+    options: {
+		responsive: false,
+		responsiveAnimationDuration:0,
+		animation: {
+			duration: 0,
+		},
+		hover: {
+			animationDuration: 400,
+		},
+        scales: {
+			xAxes: [{
+				type: "time",
+				display: true,
+				scaleLabel: {
+					display: true,
+					labelString: "Time",
+				},
+				gridLines: {
+					color: "rgba(255, 0, 0, 255)",
+					borderDash: [4, 8],
+				},
+			}],
+			yAxes: [{
+				display: true,
+				scaleLabel: {
+					display: true,
+					labelString: "Temperature, Degrees F",
+				},
+				gridLines: {
+					zeroLineColor: "rgba(255, 0, 0, 255)",
+					zeroLineBorderDash: [4, 8],
+					color: "rgba(255, 0, 0, 255)",
+					borderDash: [4, 8],
+				},
+			}]
+		},
+        legend: {
+			display: false,
+			position: "bottom",
+			labels: {
+				boxWidth: 2,
+			},
+		},
+		title: {
+			display: true,
+            fontSize: 30,   //changed font size
+			text: "Inside Temperature",
+		}
+    }
+});
+
+ctx.font = "14px Arial";
+ctx.fillStyle = "white";
+var d = new Date();
+ctx.fillText(d.toLocaleString(),490,75); 
+
+
+ctx.fillText("Hi-Res: " + results["data1"][results["data1"].length-1].y.toFixed(1),90,75);
+ctx.beginPath();
+ctx.strokeStyle="green";    //changed the color
+ctx.moveTo(75,70);
+ctx.lineTo(85,70);
+ctx.stroke();
+
+
+//duplicated above code segment to label other data.  I also repositioned these to look better.
+ctx.fillText("Normal: " + results["data2"][results["data2"].length-1].y.toFixed(1),90,90);
+ctx.beginPath();
+ctx.strokeStyle="blue";     //changed the color
+ctx.moveTo(75,85);
+ctx.lineTo(85,85);
+ctx.stroke();
+
+}
+var jsondata= $.ajax({url:'temp.php', dataType: 'json', }).done(function (results) { plot(results); } );
+</script>
+</body>
+</html>
